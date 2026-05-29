@@ -203,6 +203,10 @@ GitHub Actions pipelines for:
 - **CI**: Build + test on every push/PR
 - **Release**: Cross-compiled binaries attached to GitHub Releases
 
+## Contributors
+
+- [Dominik Atzbach](https://github.com/dominikatzbach-ui) — Creator & Maintainer
+
 ## License
 
 MIT — see [LICENSE](LICENSE)

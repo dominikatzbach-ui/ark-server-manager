@@ -5,7 +5,7 @@ Thank you for your interest in contributing!
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/ark-server-manager`
+2. Clone your fork: `git clone https://github.com/dominikatzbach-ui/ark-server-manager`
 3. Create a feature branch: `git checkout -b feature/your-feature`
 
 ## Development Setup
