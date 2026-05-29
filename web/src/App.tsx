@@ -1,15 +1,22 @@
-import { Routes, Route } from 'react-router-dom'
-import Dashboard from './pages/Dashboard'
-import ServerDetail from './pages/ServerDetail'
-import Layout from './components/Layout'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Layout } from '@/components/layout/Layout';
+import { Dashboard } from '@/pages/Dashboard';
+import { ServerWizard } from '@/pages/ServerWizard';
+import { ConfigEditor } from '@/pages/ConfigEditor';
+import { LogViewer } from '@/pages/LogViewer';
 
-export default function App() {
+export function App() {
   return (
-    <Layout>
+    <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/servers/:id" element={<ServerDetail />} />
+        <Route element={<Layout />}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/servers/new" element={<ServerWizard />} />
+          <Route path="/config" element={<ConfigEditor />} />
+          <Route path="/logs" element={<LogViewer />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
       </Routes>
-    </Layout>
-  )
+    </BrowserRouter>
+  );
 }
