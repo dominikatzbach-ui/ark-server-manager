@@ -1,0 +1,36 @@
+# Go
+/dist/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/vendor/
+
+# Node.js / Frontend
+web/node_modules/
+web/dist/
+web/.env
+web/.env.local
+
+# Build artifacts
+/internal/embed/static/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# SteamCMD data (runtime, not source)
+/data/
+/steamcmd/
+
+# Config with secrets (use config.example.yaml as template)
+config.yaml
+config.toml

@@ -1,0 +1,4 @@
+github.com/go-chi/chi/v5 v5.1.0 h1:acVI1TmefAZQGHkNqqAqmyqiSFrkKigADMXNInJXMLs=
+github.com/go-chi/chi/v5 v5.1.0/go.mod h1:DslCQbL2OYiznFReuXYUmovuv+y9p/qs7ItLd/9/ig=
+github.com/go-chi/cors v1.2.1 h1:L0uuZVXIKe9ysgOqNBzOb4NNC6yBT07GqtpnVQ9jL0=
+github.com/go-chi/cors v1.2.1/go.mod h1:sSbTewc+6wYHBBCW7ytsFSn836hqM7JxpglAy2Vzc58=
