@@ -3,8 +3,10 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/ave-dev/ark-server-manager/internal/wine"
 )
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
@@ -15,6 +17,43 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func handleWineHealth(w http.ResponseWriter, r *http.Request) {
+	prefixPath := os.Getenv("ARK_WINE_PREFIX")
+	if prefixPath == "" {
+		prefixPath = os.ExpandEnv("${HOME}/.local/share/ark-sa-wine")
+	}
+
+	env := wine.DefaultEnvironment(prefixPath)
+
+	type wineStatus struct {
+		Linux     bool   `json:"linux"`
+		Installed bool   `json:"installed"`
+		Prefix    string `json:"prefix"`
+		Error     string `json:"error,omitempty"`
+	}
+
+	status := wineStatus{
+		Linux:  wine.IsLinux(),
+		Prefix: prefixPath,
+	}
+
+	if err := wine.CheckWineInstalled(); err != nil {
+		status.Installed = false
+		status.Error = err.Error()
+		writeJSON(w, http.StatusServiceUnavailable, status)
+		return
+	}
+	status.Installed = true
+
+	if err := wine.HealthCheck(env); err != nil {
+		status.Error = err.Error()
+		writeJSON(w, http.StatusServiceUnavailable, status)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, status)
 }
 
 func serverRoutes(r chi.Router) {
