@@ -62,8 +62,10 @@ const Game = (() => {
         player.update(dt);
         if (player.wantsFire) bullets.spawnPlayer(player.gunX, player.gunY);
         bullets.update(dt);
-        // enemies.update(dt) — Step 5
-        // coins.update(dt)   — Step 6
+        enemies.update(dt, { x: player.x, y: player.y }, bullets);
+        // coins.update(dt)   — Step 6/7
+        // collision          — Step 7
+        // if (enemies.allDefeated) → Step 8: shop then next wave
 
         Renderer.updateParticles(dt);
         if (player.lives <= 0) _gameOver();
