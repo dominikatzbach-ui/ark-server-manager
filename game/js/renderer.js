@@ -106,6 +106,33 @@ const Renderer = (() => {
       'rgba(255,255,255,0.6)');
   }
 
+  // ── Wave-clear banner ─────────────────────────────────────────────────────
+  /**
+   * Fade-in / fade-out banner shown between waves.
+   * @param {number} timer      seconds remaining in the wave-clear phase
+   * @param {number} maxTimer   total duration of the wave-clear phase
+   * @param {number} wave       wave number that was just cleared
+   */
+  function drawWaveClear(ctx, timer, maxTimer, wave) {
+    // Fade in during first 20%, fade out during last 30%
+    const elapsed = maxTimer - timer;
+    let alpha;
+    if (elapsed < maxTimer * 0.2) {
+      alpha = elapsed / (maxTimer * 0.2);
+    } else if (timer < maxTimer * 0.3) {
+      alpha = timer / (maxTimer * 0.3);
+    } else {
+      alpha = 1;
+    }
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    centerText(ctx, `WAVE ${wave} CLEAR`, H / 2 - 20, 40, CONFIG.COLORS.SCORE);
+    ctx.globalAlpha = alpha * 0.7;
+    centerText(ctx, `WAVE ${wave + 1} INCOMING`, H / 2 + 32, 22, CONFIG.COLORS.HUD);
+    ctx.restore();
+  }
+
   // ── Explosion particles (purely visual) ──────────────────────────────────
   let particles = [];
 
@@ -123,7 +150,7 @@ const Renderer = (() => {
 
   return {
     initStars, updateStars, drawStars,
-    drawHUD, drawStartScreen, drawGameOverScreen, drawPauseScreen,
+    drawHUD, drawStartScreen, drawGameOverScreen, drawPauseScreen, drawWaveClear,
     spawnExplosion, updateParticles, drawParticles,
   };
 })();

@@ -6,6 +6,12 @@ const Game = (() => {
   let highscore = 0;
   let wave     = 0;
 
+  // Wave sub-phase: 'playing' while enemies are alive, 'clear' during the
+  // banner countdown before the next wave spawns.
+  let wavePhase      = 'playing';
+  let wavePhaseTimer = 0;
+  const WAVE_CLEAR_DURATION = 2.2; // seconds
+
   // Entity instances — created once, reset on new game
   let player;
   let bullets;
@@ -24,9 +30,11 @@ const Game = (() => {
   }
 
   function startNewGame() {
-    state  = STATES.PLAYING;
-    score  = 0;
-    wave   = 0;
+    state          = STATES.PLAYING;
+    wavePhase      = 'playing';
+    wavePhaseTimer = 0;
+    score          = 0;
+    wave           = 0;
     player.reset();
     bullets.clear();
     coins.reset();
@@ -36,8 +44,11 @@ const Game = (() => {
 
   function _nextWave() {
     wave += 1;
+    wavePhase      = 'playing';
+    wavePhaseTimer = 0;
+    bullets.clear();
+    coins.reset();
     enemies.spawnWave(wave);
-    // TODO (Step 9): increase difficulty via CONFIG.WAVE.DIFFICULTY_INCREMENT
   }
 
   /**
@@ -64,8 +75,16 @@ const Game = (() => {
         bullets.update(dt);
         enemies.update(dt, { x: player.x, y: player.y }, bullets);
         _handleCollisions();
-        // coins.update(dt)   — Step 7
-        // if (enemies.allDefeated) → Step 8: shop then next wave
+        coins.update(dt, player);
+
+        if (wavePhase === 'playing' && enemies.allDefeated) {
+          wavePhase      = 'clear';
+          wavePhaseTimer = WAVE_CLEAR_DURATION;
+        }
+        if (wavePhase === 'clear') {
+          wavePhaseTimer -= dt;
+          if (wavePhaseTimer <= 0) _nextWave();
+        }
 
         Renderer.updateParticles(dt);
         if (player.lives <= 0) _gameOver();
@@ -104,6 +123,9 @@ const Game = (() => {
         coins.draw(ctx);
         Renderer.drawParticles(ctx);
         Renderer.drawHUD(ctx, player, score, wave, coins);
+        if (wavePhase === 'clear') {
+          Renderer.drawWaveClear(ctx, wavePhaseTimer, WAVE_CLEAR_DURATION, wave);
+        }
         if (state === STATES.PAUSED) Renderer.drawPauseScreen(ctx);
         break;
 
@@ -187,7 +209,7 @@ const Game = (() => {
   // console poking and automated tests. Harmless in normal play.
   function debug() {
     return {
-      state, score, wave, player, bullets, enemies, coins,
+      state, score, wave, wavePhase, player, bullets, enemies, coins,
       setLives: n => { player.lives = n; },
     };
   }

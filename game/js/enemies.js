@@ -34,8 +34,9 @@ const _ECOLOR = {
   C: CONFIG.COLORS.ENEMY_C,   // '#cc44ff'
 };
 
-// Row type assigned per formation row (0 = top / most valuable)
-const _ROW_TYPE = ['C', 'B', 'B', 'A'];
+// Row type assigned per formation row (0 = top / most valuable).
+// Supports up to 6 rows; extra rows fill with type A.
+const _ROW_TYPE = ['C', 'B', 'B', 'A', 'A', 'A'];
 
 // ── Enemy ──────────────────────────────────────────────────────────────────────
 class Enemy {
@@ -152,14 +153,17 @@ class Enemy {
   }
 
   /**
-   * Start a Galaga-style sweeping dive:
-   * sidestep away from the player's side, then curve toward them and exit below.
+   * Start a Galaga-style sweeping dive.
+   * @param {{ x, y }} playerPos
+   * @param {number} [waveNumber=1]  used to scale dive speed
    */
-  startDive(playerPos) {
-    this.state    = 'diving';
-    this.diveT    = 0;
-    const p0      = { x: this.x, y: this.y };
-    // Control point sweeps to the opposite side from the player to create a curve
+  startDive(playerPos, waveNumber = 1) {
+    this.state = 'diving';
+    this.diveT = 0;
+    // Faster dives each wave (floor at 1.0s)
+    this.diveDuration = Math.max(1.0, 2.5 - (waveNumber - 1) * 0.12);
+
+    const p0 = { x: this.x, y: this.y };
     const sweepDir = (playerPos.x < this.x) ? 1 : -1;
     const p1 = {
       x: this.x + sweepDir * 200,
@@ -215,21 +219,23 @@ class EnemyManager {
     this.formationVX   = 30 + (waveNumber - 1) * 6;  // +6 px/s each wave
     this.diveTimer     = CONFIG.ENEMY.DIVE_INTERVAL_MS / 1000;
 
-    const { FORMATION_ROWS, FORMATION_COLS, CELL_W, CELL_H, OFFSET_X, OFFSET_Y }
+    // Add a new row every 2 waves, up to 6 rows total
+    const rowCount = Math.min(4 + Math.floor((waveNumber - 1) / 2), 6);
+
+    const { FORMATION_COLS, CELL_W, CELL_H, OFFSET_X, OFFSET_Y }
       = CONFIG.ENEMY;
 
     let idx = 0;
-    for (let row = 0; row < FORMATION_ROWS; row++) {
+    for (let row = 0; row < rowCount; row++) {
       const type = _ROW_TYPE[Math.min(row, _ROW_TYPE.length - 1)];
       for (let col = 0; col < FORMATION_COLS; col++) {
         const formX = OFFSET_X + col * CELL_W + CELL_W / 2;
         const formY = OFFSET_Y + row * CELL_H + CELL_H / 2;
         const e     = new Enemy(type, formX, formY);
 
-        // Stagger entry: 40ms between each enemy, columns zip in first (left→right,
-        // then next row), so the formation fills in from left to right, row by row.
+        // Stagger entry: 40ms between each enemy, fills left→right, row by row.
         e.entryDelay    = idx * 0.04;
-        e.spawnX        = formX;  // fly straight down from above formation slot
+        e.spawnX        = formX;
         e.spawnY        = -80;
         e.x             = formX;
         e.y             = -80;
@@ -272,12 +278,17 @@ class EnemyManager {
     // Dead enemies are removed in Step 7 (collision + hit detection)
   }
 
-  /** Pick a random formation enemy and send it on a dive. */
+  /** Pick 1–3 random formation enemies and send them diving (more per wave). */
   _triggerDive(playerPos) {
     const pool = this.enemies.filter(e => e.state === 'formation');
     if (pool.length === 0) return;
-    const diver = pool[Math.floor(Math.random() * pool.length)];
-    diver.startDive(playerPos);
+    // Wave 1→1 diver, wave 4→2, wave 7+→3
+    const count = Math.min(1 + Math.floor((this.waveNumber - 1) / 3), 3);
+    for (let i = 0; i < count && pool.length > 0; i++) {
+      const idx   = Math.floor(Math.random() * pool.length);
+      const diver = pool.splice(idx, 1)[0];
+      diver.startDive(playerPos, this.waveNumber);
+    }
   }
 
   draw(ctx) {
