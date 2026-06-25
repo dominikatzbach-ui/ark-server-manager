@@ -13,59 +13,75 @@ Wellen werden endlos schwerer, Ziel ist ein möglichst hoher Highscore.
 
 ## Steuerung
 
-| Taste               | Aktion                         |
-|---------------------|-------------------------------|
-| WASD / Pfeiltasten  | Schiff bewegen (8 Richtungen) |
-| Leertaste / Z       | Schießen (halten = Dauerfeuer)|
-| P / ESC             | Pause / Fortsetzen            |
-| Enter               | Bestätigen (Menü, Shop)       |
-| Pfeiltasten (Shop)  | Upgrade auswählen             |
+| Taste               | Aktion                          |
+|---------------------|---------------------------------|
+| WASD / Pfeiltasten  | Schiff bewegen (8 Richtungen)   |
+| Leertaste / Z       | Schießen (halten = Dauerfeuer)  |
+| P / ESC             | Pause / Fortsetzen              |
+| Enter               | Bestätigen (Menü, Shop-Kauf)    |
+| ↑/↓ W/S (Shop)      | Upgrade auswählen               |
+| P / ESC (Shop)      | Shop überspringen → nächste Welle|
 
 ---
 
 ## Features
 
 ### Spieler
-- Bewegung in 8 Richtungen, Wandbegrenzung links/rechts/oben/unten
-- 3 Leben; kurze Unverwundbarkeitsphase nach Treffer (blinkende Animation)
+- Bewegung in 8 Richtungen, Wandbegrenzung
+- 3 Leben; 2 s Unverwundbarkeitsphase nach Treffer (blinkende Animation)
 - Schuss-Cooldown abhängig vom Rapid-Fire-Upgrade
+- **Schildaura** sichtbar während Shield-Power-up aktiv
 
 ### Feinde
-- **3 Typen:** A (rot, 1 HP), B (orange, 2 HP), C (lila, 3 HP)
-- Formation: 4 Reihen × 8 Spalten, gemischte Typen je Welle
-- Einmarsch-Animation: Feinde fliegen von oben in ihre Formationsslots
-- Leichte horizontale Schwingung in Formation
-- Sturzflug-KI: alle N Sekunden löst sich 1–2 Feinde aus Formation,
-  folgt einer Quadratischen-Bézier-Kurve in Richtung Spieler und
-  schießt dabei; nach Durchquerung des Bildschirms kehrt er zurück oder
-  gilt als verloren
-- Eigene Schüsse: Feinde in der vordersten Reihe schießen sporadisch
+- **3 Typen:** A (rot, 1 HP, 100 Pkt), B (orange, 2 HP, 200 Pkt), C (lila, 3 HP, 400 Pkt)
+- Formation: 4–6 Reihen × 8 Spalten (wächst alle 2 Wellen), gemischte Typen
+- Einmarsch-Animation mit Ease-in-out-Cubic
+- Horizontale Schwingung der gesamten Formation (±90 px)
+- Sturzflug-KI: 1–3 Feinde gleichzeitig stürzen ab (Anzahl steigt mit Welle),
+  folgen einer Quadratischen-Bézier-Kurve zum Spieler, schießen dabei
+- Feinde schießen auch in Formation sporadisch
+
+### Boss (alle 5 Wellen)
+- Großer Flaggschiff-Sprite (80 × 60 px auf Screen)
+- HP: 50 + (Boss-Nr − 1) × 30
+- **Phase 1:** 3-Wege-Spread in Spieler-Richtung, horizontales Sweep
+- **Phase 2 (< 50 % HP):** Extra Diagonalschüsse, HP-Balken färbt sich rot
+- Boss-HP-Balken am unteren Bildschirmrand
+- Drops immer ein Power-up beim Tod
 
 ### Coins & Shop
-- Jeder getötete Feind droppt 1–4 Coins (je nach Typ), die nach unten fallen
-- Coins werden automatisch zum Spieler hin magnetisch angezogen, wenn nah genug
-- Nicht eingesammelte Coins verschwinden nach 8 Sekunden
-- Nach jeder Welle öffnet sich der **Shop** (Spielpause):
+- Coin-Drop pro Feind: A = 1, B = 2, C = 4
+- Magnet-Pull innerhalb 80 px vom Spieler
+- Fade-Out nach 8 Sekunden
+- Nach jeder Welle: Shop-Overlay (P zum Überspringen)
 
-| Upgrade        | Effekt                                        | Kosten | Max |
-|----------------|-----------------------------------------------|--------|-----|
-| Rapid Fire     | −30 % Schuss-Cooldown pro Stufe               | 10     | 3   |
-| Spread Shot    | +1 zusätzlicher Schuss pro Stufe (Winkel ±15°)| 20     | 3   |
-| Double Cannon  | Zweite Kanone neben dem Hauptschuss            | 15     | 1   |
-| Power Laser    | Ersetzt Einzelschuss durch Dauerstrahl (+2 DMG)| 40    | 1   |
+| Upgrade        | Effekt                                         | Kosten | Max |
+|----------------|------------------------------------------------|--------|-----|
+| Rapid Fire     | −30 % Schuss-Cooldown pro Stufe                | 10     | 3   |
+| Spread Shot    | 3-Wege-Schuss (±15°)                           | 20     | 3   |
+| Double Cannon  | Zweite Kanone (+8 px seitlich)                 | 15     | 1   |
+| Power Laser    | Schaden × 2 pro Schuss                         | 40     | 1   |
 
-- Nicht ausgegebene Coins bleiben erhalten
+### Power-ups (Gelegenheitsdrop, 10 % Chance)
+| Typ    | Symbol | Effekt              | Dauer |
+|--------|--------|---------------------|-------|
+| Shield | S      | Treffer-Immunität   | 6 s   |
+| Spread | W      | 3-Wege-Schuss       | 12 s  |
 
-### Score & Highscore
-- Punkte pro getötetem Feind: A = 100, B = 200, C = 400
-- Bonus bei Sturzflug-Kill: ×2 Punkte
-- Highscore wird in `localStorage` gespeichert
+### Sound (Web Audio API, keine externen Files)
+- Schuss-Piep (Spieler)
+- Explosions-Noise (klein / groß für Boss)
+- Spieler-Treffer-Tiefton
+- Wellen-klar-Fanfare (aufsteigende Noten)
+- Coin-Tick, Power-up-Jingle, Boss-Hit-Klick
 
 ### Visuelles
-- Prozedural gezeichnete Sprites (Canvas 2D Primitives — keine Bild-Assets)
-- Scrollendes Starfield (3 Ebenen verschiedener Geschwindigkeit = Parallax)
-- Explosions-Partikel beim Feindtod
-- Blinken-Effekt wenn Spieler getroffen wird
+- Prozedurale Sprites via Canvas `fillRect`
+- Scrollendes Parallax-Starfield (3 Ebenen)
+- Explosionspartikel beim Feindtod (14 Partikel normal, 28 für Boss)
+- Screen-Shake bei Spielertreffer
+- Mündungsblitz beim Abfeuern
+- Shield-Aura um das Spielerschiff
 
 ---
 
@@ -74,40 +90,45 @@ Wellen werden endlos schwerer, Ziel ist ein möglichst hoher Highscore.
 ```
 game/
 ├── index.html          ← Canvas + Script-Tags (kein Build-Tool)
-├── style.css           ← Fullscreen Canvas, pixelated rendering
+├── style.css           ← Fullscreen Canvas 16:9
 ├── SPEC.md             ← dieses Dokument
+├── README.md           ← Kurzanleitung
 └── js/
     ├── config.js       ← Alle Konstanten (Speeds, Farben, Upgrade-Daten)
     ├── utils.js        ← AABB, Bézier, lerp, clamp, randFloat …
-    ├── input.js        ← Tastatur-State (held / pressed pro Frame)
-    ├── player.js       ← Player-Klasse (Bewegung, Schuss, Upgrades)
-    ├── bullets.js      ← BulletManager (Spieler- & Feindschüsse)
-    ├── enemies.js      ← Enemy + EnemyManager (Formation, Dive-KI)
-    ├── coins.js        ← CoinManager (Drop, Magnet, Pickup)
+    ├── input.js        ← Tastatur-State (held / pressed-Edge pro Frame)
+    ├── audio.js        ← Prozedurale Sounds via Web Audio API
+    ├── player.js       ← Player-Klasse (Bewegung, Schuss, Power-ups)
+    ├── bullets.js      ← BulletManager + Objekt-Pool
+    ├── enemies.js      ← Enemy + EnemyManager (Formation, Dive-KI, Schüsse)
+    ├── boss.js         ← Boss + BossManager (HP, Phasen, Angriffsmuster)
+    ├── coins.js        ← CoinManager (Drop, Drift, Magnet, Pickup)
+    ├── powerups.js     ← PowerupManager (Drop, Pickup, Draw)
     ├── shop.js         ← Shop (UI, Kauflogik)
-    ├── renderer.js     ← Starfield, HUD, Screens, Explosionspartikel
-    ├── game.js         ← State-Machine (start|playing|paused|shop|gameover)
-    └── main.js         ← Entry Point, requestAnimationFrame-Loop
+    ├── renderer.js     ← Starfield, HUD, Screens, Partikel, Boss-HP-Bar
+    ├── game.js         ← State-Machine (menu|playing|paused|shop|gameover)
+    └── main.js         ← Entry Point, Fixed-Timestep RAF-Loop
 ```
 
-**Keine ES-Module** — klassische Script-Tags in definierter Load-Reihenfolge,
-gemeinsamer globaler Namespace. Funktioniert mit `file://` ohne Server.
+**Keine ES-Module** — klassische Script-Tags, globaler Namespace.  
+Funktioniert mit `file://` ohne lokalen Server.
 
 ---
 
-## 10-Schritt-Umsetzungsplan
+## Schwierigkeits-Kurve
 
-| # | Schritt | Ziel / Deliverable |
-|---|---------|-------------------|
-| 1 | **Struktur & Spec** | Alle Dateien angelegt, SPEC.md, leerer Canvas sichtbar im Browser |
-| 2 | **Game Loop + Input** | RAF-Loop läuft mit deltaTime-Cap; Tasten-State korrekt per Frame |
-| 3 | **Spieler-Schiff** | Schiff bewegt sich im Canvas, feuert einzelne Bullets, Kollisionsbox |
-| 4 | **Bullet-System** | Player- & Enemy-Bullets bewegen sich, Screen-Culling, Dauerfeuer |
-| 5 | **Feind-Formation** | Welle spawnt, Feinde fliegen in Formation ein, Schwingung, draw |
-| 6 | **Dive-Angriff-KI** | Feinde lösen sich, Bézier-Kurve zum Spieler, schießen im Dive |
-| 7 | **Kollision & Coins** | Hit-Detection Bullet↔Enemy, Enemy↔Player; Coin-Drop, Magnet, Pickup |
-| 8 | **Shop & Upgrades** | Coin-Zähler im HUD; Shop-Overlay nach Welle; alle 4 Upgrades wirken |
-| 9 | **Endlos & Score** | Wellen-Generator, Schwierigkeits-Scaling, Score, Lives, Game Over |
-| 10 | **Polish** | Starfield, Explosionen, Start-Screen, Game-Over-Screen, Balancing |
+| Welle | Reihen | Gleichzeitige Diver | Boss |
+|-------|--------|---------------------|------|
+| 1     | 4      | 1                   | –    |
+| 2     | 4      | 1                   | –    |
+| 3     | 5      | 1                   | –    |
+| 4     | 5      | 2                   | –    |
+| 5     | –      | –                   | ✓ (50 HP) |
+| 6     | 6      | 2                   | –    |
+| 7     | 6      | 3                   | –    |
+| 10    | –      | –                   | ✓ (80 HP) |
+| …     | 6 max  | 3 max               | ±5   |
 
-Jeder Schritt ist einzeln spielbar und testbar — kein Schritt bricht einen vorherigen.
+Formationsgeschwindigkeit: +6 px/s je Welle.  
+Dive-Intervall: −8 % je Welle (Minimum 0.6 s).  
+Dive-Dauer: −0.12 s je Welle (Minimum 1.0 s).

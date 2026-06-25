@@ -133,24 +133,110 @@ const Renderer = (() => {
     ctx.restore();
   }
 
-  // ── Explosion particles (purely visual) ──────────────────────────────────
+  // ── Explosion particles ──────────────────────────────────────────────────
   let particles = [];
 
-  function spawnExplosion(x, y, color) {
-    // TODO (Step 10): push particle objects
+  /**
+   * Burst `count` particles at (x, y) in the given color.
+   * @param {boolean} big  true for boss-sized explosion
+   */
+  function spawnExplosion(x, y, color, big = false) {
+    const count = big ? 28 : 14;
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = big
+        ? 60 + Math.random() * 200
+        : 40 + Math.random() * 120;
+      particles.push({
+        x,
+        y,
+        vx:      Math.cos(angle) * speed,
+        vy:      Math.sin(angle) * speed,
+        life:    big ? 0.9 + Math.random() * 0.5 : 0.5 + Math.random() * 0.4,
+        maxLife: 0,   // filled below
+        r:       big ? 2 + Math.random() * 4 : 1 + Math.random() * 3,
+        color,
+      });
+      particles[particles.length - 1].maxLife = particles[particles.length - 1].life;
+    }
   }
 
   function updateParticles(dt) {
-    // TODO (Step 10): age and remove dead particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x  += p.vx * dt;
+      p.y  += p.vy * dt;
+      p.vx *= Math.pow(0.88, dt * 60);
+      p.vy *= Math.pow(0.88, dt * 60);
+      p.life -= dt;
+      if (p.life <= 0) {
+        particles[i] = particles[particles.length - 1];
+        particles.pop();
+      }
+    }
   }
 
   function drawParticles(ctx) {
-    // TODO (Step 10): draw each particle
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+      ctx.fillStyle   = p.color;
+      ctx.fillRect(Math.round(p.x - p.r), Math.round(p.y - p.r), p.r * 2, p.r * 2);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ── Boss HP bar ──────────────────────────────────────────────────────────
+  function drawBossHPBar(ctx, boss) {
+    const barW  = 400;
+    const barH  = 14;
+    const bx    = W / 2 - barW / 2;
+    const by    = H - 36;
+    const frac  = Math.max(0, boss.hp / boss.maxHp);
+    const phase2 = boss.hp <= boss.maxHp * 0.5;
+
+    // Background track
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(bx - 2, by - 2, barW + 4, barH + 4);
+
+    // Fill — turns red in phase 2
+    ctx.fillStyle = phase2 ? '#ff2222' : '#cc44ff';
+    ctx.fillRect(bx, by, Math.round(barW * frac), barH);
+
+    // Border
+    ctx.strokeStyle = phase2 ? '#ff6666' : '#ff44ff';
+    ctx.lineWidth   = 2;
+    ctx.strokeRect(bx, by, barW, barH);
+
+    // Label
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = 'bold 12px "Courier New", monospace';
+    ctx.textAlign   = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`BOSS ${phase2 ? '⚠ PHASE 2' : ''}`, W / 2, by - 12);
+  }
+
+  // ── Power-up HUD ──────────────────────────────────────────────────────────
+  function drawPowerupHUD(ctx, player) {
+    let offsetY = 70;
+    ctx.font         = 'bold 14px "Courier New", monospace';
+    ctx.textBaseline = 'top';
+    ctx.textAlign    = 'left';
+
+    if (player.shieldTimer > 0) {
+      ctx.fillStyle = '#00ccff';
+      ctx.fillText(`SHIELD ${Math.ceil(player.shieldTimer)}s`, 16, offsetY);
+      offsetY += 22;
+    }
+    if (player.spreadTimer > 0) {
+      ctx.fillStyle = '#ff9900';
+      ctx.fillText(`SPREAD ${Math.ceil(player.spreadTimer)}s`, 16, offsetY);
+    }
   }
 
   return {
     initStars, updateStars, drawStars,
     drawHUD, drawStartScreen, drawGameOverScreen, drawPauseScreen, drawWaveClear,
+    drawBossHPBar, drawPowerupHUD,
     spawnExplosion, updateParticles, drawParticles,
   };
 })();

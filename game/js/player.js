@@ -46,7 +46,10 @@ class Player {
     this.h = _SH;   // 51
     this.lives           = CONFIG.PLAYER.LIVES;
     this.invincibleTimer = 0;  // seconds remaining
+    this.shieldTimer     = 0;  // power-up shield seconds remaining
+    this.spreadTimer     = 0;  // power-up spread-shot seconds remaining
     this.gunCooldown     = 0;  // seconds remaining
+    this.muzzleFlash     = 0;  // cosmetic flash timer (seconds)
     this.wantsFire       = false;  // set each frame; game.js reads to spawn bullets
     this.upgrades = {
       rapid_fire:    0,
@@ -56,8 +59,9 @@ class Player {
     };
   }
 
-  get vulnerable()   { return this.invincibleTimer <= 0; }
+  get vulnerable()   { return this.invincibleTimer <= 0 && this.shieldTimer <= 0; }
   get fireRate()     { return CONFIG.PLAYER.GUN_COOLDOWN_MS * Math.pow(0.7, this.upgrades.rapid_fire) / 1000; }
+  get hasSpread()    { return this.spreadTimer > 0 || this.upgrades.spread_shot > 0; }
 
   // Bullet spawn anchor — top-center of sprite (gun tip)
   get gunX() { return this.x; }
@@ -79,12 +83,18 @@ class Player {
 
     // ── Timers ───────────────────────────────────────────────────────────────
     if (this.invincibleTimer > 0) this.invincibleTimer -= dt;
+    if (this.shieldTimer     > 0) this.shieldTimer     -= dt;
+    if (this.spreadTimer     > 0) this.spreadTimer     -= dt;
     if (this.gunCooldown     > 0) this.gunCooldown     -= dt;
+    if (this.muzzleFlash     > 0) this.muzzleFlash     -= dt;
 
     // ── Fire intent ──────────────────────────────────────────────────────────
     // game.js reads this.wantsFire and calls bullets.spawnPlayer() each frame.
     this.wantsFire = Input.shooting() && this.gunCooldown <= 0;
-    if (this.wantsFire) this.gunCooldown = this.fireRate;
+    if (this.wantsFire) {
+      this.gunCooldown = this.fireRate;
+      this.muzzleFlash = 0.06;
+    }
   }
 
   /**
@@ -95,7 +105,17 @@ class Player {
     if (!this.vulnerable) return false;
     this.lives -= 1;
     this.invincibleTimer = CONFIG.PLAYER.INVINCIBLE_MS / 1000;
+    this.shieldTimer     = 0;  // shield consumed on hit
     return true;
+  }
+
+  /** Apply a collected power-up. */
+  applyPowerup(type) {
+    if (type === 'shield') {
+      this.shieldTimer = 6;      // 6 seconds of damage immunity
+    } else if (type === 'spread') {
+      this.spreadTimer = 12;     // 12 seconds of 3-way shot
+    }
   }
 
   draw(ctx) {
@@ -119,10 +139,31 @@ class Player {
     ctx.save();
     ctx.globalAlpha = 0.25 + 0.15 * Math.sin(performance.now() / 80);
     ctx.fillStyle = '#ff8800';
-    const ex = ox + Math.round(_SW * 0.5);
     const ey = oy + _SH + 2;
     ctx.fillRect(ox + 6,         ey,  9, 4);   // left pod glow
     ctx.fillRect(ox + _SW - 15, ey,  9, 4);   // right pod glow
     ctx.restore();
+
+    // Muzzle flash — brief white burst at gun tip
+    if (this.muzzleFlash > 0) {
+      ctx.save();
+      ctx.globalAlpha = this.muzzleFlash / 0.06;
+      ctx.fillStyle   = '#ffffff';
+      ctx.fillRect(Math.round(this.x - 5), Math.round(this.gunY - 6), 10, 10);
+      ctx.restore();
+    }
+
+    // Shield aura — cyan ring while shieldTimer > 0
+    if (this.shieldTimer > 0) {
+      const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 120);
+      ctx.save();
+      ctx.globalAlpha = 0.3 + 0.2 * pulse;
+      ctx.strokeStyle  = '#00ccff';
+      ctx.lineWidth    = 3;
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y, _SW / 2 + 8, _SH / 2 + 8, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 }

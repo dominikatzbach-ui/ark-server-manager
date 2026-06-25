@@ -73,7 +73,9 @@ class Enemy {
     this.diveDuration = 2.5;  // seconds for full bezier arc
     this.divePath     = null; // { p0, p1, p2 }
 
-    this.shootTimer = 0;
+    // Shoot interval varies by type: faster types shoot more often
+    this.shootTimer    = 2 + Math.random() * 3;  // stagger initial shot
+    this.shootInterval = { A: 3.5, B: 2.8, C: 2.2 }[type];
   }
 
   get dead() { return this.hp <= 0; }
@@ -88,8 +90,9 @@ class Enemy {
    * @param {number} dt
    * @param {{ x, y }} playerPos
    * @param {number} formOffX  current formation-wide X offset (oscillation)
+   * @param {BulletManager} bullets
    */
-  update(dt, playerPos, formOffX) {
+  update(dt, playerPos, formOffX, bullets) {
     switch (this.state) {
 
       case 'entering': {
@@ -114,6 +117,15 @@ class Enemy {
         // Follow the formation oscillation. Bob is cosmetic — kept in draw().
         this.x = this.formX + formOffX;
         this.y = this.formY;
+
+        // Only front-row enemies (lowest on screen) shoot to avoid bullet walls
+        if (bullets && this.y > 0) {
+          this.shootTimer -= dt;
+          if (this.shootTimer <= 0) {
+            this.shootTimer = this.shootInterval * (0.8 + Math.random() * 0.4);
+            bullets.spawnEnemy(this.x, this.y + this.h / 2, playerPos.x, playerPos.y);
+          }
+        }
         break;
       }
 
@@ -147,6 +159,15 @@ class Enemy {
         const t  = this.diveT;
         this.x = mt*mt*p0.x + 2*mt*t*p1.x + t*t*p2.x;
         this.y = mt*mt*p0.y + 2*mt*t*p1.y + t*t*p2.y;
+
+        // Divers shoot periodically
+        if (bullets && this.y > 0 && this.y < CONFIG.CANVAS.HEIGHT) {
+          this.shootTimer -= dt;
+          if (this.shootTimer <= 0) {
+            this.shootTimer = this.shootInterval * 0.6;
+            bullets.spawnEnemy(this.x, this.y, playerPos.x, playerPos.y);
+          }
+        }
         break;
       }
     }
@@ -273,9 +294,8 @@ class EnemyManager {
 
     // ── Update each enemy ─────────────────────────────────────────────────
     for (const e of this.enemies) {
-      e.update(dt, playerPos, this.formationOffX);
+      e.update(dt, playerPos, this.formationOffX, bullets);
     }
-    // Dead enemies are removed in Step 7 (collision + hit detection)
   }
 
   /** Pick 1–3 random formation enemies and send them diving (more per wave). */

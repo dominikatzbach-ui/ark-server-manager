@@ -22,7 +22,7 @@ class BulletManager {
     this._pool.push(b);
   }
 
-  /** Fire a player bullet upward from (x, y). `vx` lets later upgrades angle it. */
+  /** Fire a player bullet upward from (x, y). `vx` lets upgrades angle it. */
   spawnPlayer(x, y, vx = 0, damage = 1) {
     const b = this._acquire();
     b.x = x;  b.y = y;
@@ -33,6 +33,27 @@ class BulletManager {
     b.from = 'player';
     this.playerBullets.push(b);
     return b;
+  }
+
+  /**
+   * Fire a 3-way spread from (x, y): center + two angled side shots.
+   * @param {number} spreadDeg  half-angle of each side shot in degrees
+   * @param {number} damage
+   */
+  spawnSpread(x, y, spreadDeg = 15, damage = 1) {
+    const sp  = CONFIG.BULLET.PLAYER_SPEED;
+    const rad = spreadDeg * Math.PI / 180;
+    const offsets = [-rad, 0, rad];
+    for (const angle of offsets) {
+      const b = this._acquire();
+      b.x = x;  b.y = y;
+      b.vx = Math.sin(angle) * sp;
+      b.vy = -Math.cos(angle) * sp;
+      b.w = 4;  b.h = 14;
+      b.damage = damage;
+      b.from = 'player';
+      this.playerBullets.push(b);
+    }
   }
 
   /** Fire an enemy bullet from (x, y) aimed at (targetX, targetY). */
