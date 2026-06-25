@@ -82,5 +82,6 @@ const CONFIG = Object.freeze({
     STAR:        '#ffffff',
     HUD:         '#ffffff',
     SCORE:       '#ffd700',
+    COIN:        '#ffd700',
   },
 });

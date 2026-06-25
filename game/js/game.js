@@ -58,10 +58,14 @@ const Game = (() => {
 
       case STATES.PLAYING:
         if (Input.pausePressed()) { state = STATES.PAUSED; break; }
-        // TODO (Steps 3–9): update player, bullets, enemies, coins; check
-        //                   collisions; detect wave clear → shop; detect
-        //                   game over
+
+        player.update(dt);
+        // bullets.update(dt) — Step 4
+        // enemies.update(dt) — Step 5
+        // coins.update(dt)   — Step 6
+
         Renderer.updateParticles(dt);
+        if (player.lives <= 0) _gameOver();
         break;
 
       case STATES.PAUSED:
