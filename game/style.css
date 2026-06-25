@@ -16,9 +16,9 @@ html, body {
 
 #game-wrapper {
   position: relative;
-  /* Scales canvas to viewport height while keeping 2:3 aspect ratio */
-  height: 100vh;
-  aspect-ratio: 2 / 3;
+  /* Keep 16:9 and fit inside the viewport on both axes */
+  aspect-ratio: 16 / 9;
+  width: min(100vw, calc(100vh * 16 / 9));
 }
 
 #gameCanvas {

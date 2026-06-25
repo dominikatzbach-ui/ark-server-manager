@@ -1,7 +1,7 @@
 // Central game state machine.
 // States: 'start' | 'playing' | 'paused' | 'shop' | 'gameover'
 const Game = (() => {
-  let state    = 'start';
+  let state    = STATES.MENU;
   let score    = 0;
   let highscore = 0;
   let wave     = 0;
@@ -24,7 +24,7 @@ const Game = (() => {
   }
 
   function startNewGame() {
-    state  = 'playing';
+    state  = STATES.PLAYING;
     score  = 0;
     wave   = 0;
     player.reset();
@@ -47,68 +47,74 @@ const Game = (() => {
   function update(dt) {
     Input.poll();
 
+    // The starfield scrolls in every state so the loop is always visibly
+    // alive — even on the menu and game-over screens.
+    Renderer.updateStars(dt);
+
     switch (state) {
-      case 'start':
-        // TODO (Step 10): wait for ENTER
+      case STATES.MENU:
+        if (Input.confirmPressed()) startNewGame();
         break;
 
-      case 'playing':
+      case STATES.PLAYING:
+        if (Input.pausePressed()) { state = STATES.PAUSED; break; }
         // TODO (Steps 3–9): update player, bullets, enemies, coins; check
         //                   collisions; detect wave clear → shop; detect
         //                   game over
-        Renderer.updateStars(dt);
         Renderer.updateParticles(dt);
         break;
 
-      case 'paused':
-        // TODO (Step 10): resume on P/ESC
+      case STATES.PAUSED:
+        if (Input.pausePressed()) state = STATES.PLAYING;
         break;
 
-      case 'shop':
+      case STATES.SHOP:
         shop.update(coins, player);
         break;
 
-      case 'gameover':
-        // TODO (Step 9): save highscore, wait for ENTER to restart
+      case STATES.GAMEOVER:
+        if (Input.confirmPressed()) startNewGame();
         break;
     }
   }
 
   function draw(ctx) {
-    ctx.clearRect(0, 0, CONFIG.CANVAS.WIDTH, CONFIG.CANVAS.HEIGHT);
+    // Solid black space background, then the parallax starfield over it.
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, CONFIG.CANVAS.WIDTH, CONFIG.CANVAS.HEIGHT);
     Renderer.drawStars(ctx);
 
     switch (state) {
-      case 'start':
+      case STATES.MENU:
         Renderer.drawStartScreen(ctx);
         break;
 
-      case 'playing':
-      case 'paused':
+      case STATES.PLAYING:
+      case STATES.PAUSED:
         enemies.draw(ctx);
         bullets.draw(ctx);
         player.draw(ctx);
         coins.draw(ctx);
         Renderer.drawParticles(ctx);
         Renderer.drawHUD(ctx, player, score, wave, coins);
-        if (state === 'paused') Renderer.drawPauseScreen(ctx);
+        if (state === STATES.PAUSED) Renderer.drawPauseScreen(ctx);
         break;
 
-      case 'shop':
+      case STATES.SHOP:
         enemies.draw(ctx);
         player.draw(ctx);
         Renderer.drawHUD(ctx, player, score, wave, coins);
         shop.draw(ctx, coins, player);
         break;
 
-      case 'gameover':
+      case STATES.GAMEOVER:
         Renderer.drawGameOverScreen(ctx, score, highscore);
         break;
     }
   }
 
   function _gameOver() {
-    state = 'gameover';
+    state = STATES.GAMEOVER;
     if (score > highscore) {
       highscore = score;
       localStorage.setItem('rss_highscore', highscore);
