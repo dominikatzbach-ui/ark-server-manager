@@ -1,12 +1,24 @@
 // Shared math & geometry helpers used across all modules.
 const Utils = (() => {
-  /** Axis-Aligned Bounding Box collision */
+  /** Axis-Aligned Bounding Box collision (x/y = top-left corner) */
   function aabb(a, b) {
     return (
       a.x < b.x + b.w &&
       a.x + a.w > b.x &&
       a.y < b.y + b.h &&
       a.y + a.h > b.y
+    );
+  }
+
+  /**
+   * AABB collision where x/y is the CENTER of each box (w/h are full extents).
+   * All game entities (player, bullets, enemies) are stored center-based, so
+   * this is the variant collision code uses.
+   */
+  function aabbCenter(a, b) {
+    return (
+      Math.abs(a.x - b.x) * 2 < a.w + b.w &&
+      Math.abs(a.y - b.y) * 2 < a.h + b.h
     );
   }
 
@@ -58,5 +70,5 @@ const Utils = (() => {
     return Math.sqrt(dx * dx + dy * dy);
   }
 
-  return { aabb, circleCollide, lerp, clamp, randFloat, randInt, bezierPoint, angleTo, dist };
+  return { aabb, aabbCenter, circleCollide, lerp, clamp, randFloat, randInt, bezierPoint, angleTo, dist };
 })();

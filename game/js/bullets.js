@@ -17,8 +17,8 @@ class BulletManager {
       { x: 0, y: 0, vx: 0, vy: 0, w: 0, h: 0, damage: 1, from: 'player' };
   }
 
-  /** Return a bullet object to the pool for reuse. */
-  _release(b) {
+  /** Return a bullet object to the pool for reuse (e.g. after a collision). */
+  recycle(b) {
     this._pool.push(b);
   }
 
@@ -72,7 +72,7 @@ class BulletManager {
       if (b.y + hh < 0 || b.y - hh > H || b.x + hw < 0 || b.x - hw > W) {
         list[i] = list[list.length - 1]; // swap with last…
         list.pop();                       // …then drop the tail
-        this._release(b);
+        this.recycle(b);
       }
     }
   }
@@ -94,8 +94,8 @@ class BulletManager {
 
   /** Recycle every active bullet (used on new game / wave reset). */
   clear() {
-    for (const b of this.playerBullets) this._release(b);
-    for (const b of this.enemyBullets)  this._release(b);
+    for (const b of this.playerBullets) this.recycle(b);
+    for (const b of this.enemyBullets)  this.recycle(b);
     this.playerBullets.length = 0;
     this.enemyBullets.length  = 0;
   }

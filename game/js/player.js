@@ -87,11 +87,15 @@ class Player {
     if (this.wantsFire) this.gunCooldown = this.fireRate;
   }
 
-  /** Subtract a life and trigger invincibility. Call from collision code. */
+  /**
+   * Subtract a life and trigger invincibility. Call from collision code.
+   * @returns {boolean} true if a life was actually lost (false if invincible)
+   */
   hit() {
-    if (!this.vulnerable) return;
+    if (!this.vulnerable) return false;
     this.lives -= 1;
     this.invincibleTimer = CONFIG.PLAYER.INVINCIBLE_MS / 1000;
+    return true;
   }
 
   draw(ctx) {

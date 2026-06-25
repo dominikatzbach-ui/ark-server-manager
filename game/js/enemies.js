@@ -117,6 +117,15 @@ class Enemy {
       }
 
       case 'diving': {
+        // Safety net: a diving enemy must always have a path. If something put
+        // it in this state without one, calmly rejoin the formation.
+        if (!this.divePath) {
+          this.x = this.formX + formOffX;
+          this.y = this.formY;
+          this.state = 'formation';
+          break;
+        }
+
         this.diveT += dt / this.diveDuration;
 
         // Exited screen or bezier complete → rejoin formation from above
