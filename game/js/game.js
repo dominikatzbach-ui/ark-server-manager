@@ -60,7 +60,8 @@ const Game = (() => {
         if (Input.pausePressed()) { state = STATES.PAUSED; break; }
 
         player.update(dt);
-        // bullets.update(dt) — Step 4
+        if (player.wantsFire) bullets.spawnPlayer(player.gunX, player.gunY);
+        bullets.update(dt);
         // enemies.update(dt) — Step 5
         // coins.update(dt)   — Step 6
 
